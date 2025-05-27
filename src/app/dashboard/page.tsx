@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchLeaves } from "@/store/slices/fetchleaveSlice";
 import { Avatar } from "@/components/ui/avatar";
+import { fetchUsersSmart } from "@/store/slices/getUserSmartSlice";
 // Dummy data for demonstration
 
 const upcomingHolidays = [
@@ -15,12 +16,24 @@ const upcomingHolidays = [
 ];
 
 export default function Dashboard() {
+  // All hooks at the top (unconditional)
   const dispatch = useAppDispatch();
   const router = useRouter();
   const [currentUserEmail, setCurrentUserEmail] = useState<string>("");
-  const { isLoading, data, error } = useAppSelector(
-    (state) => state.fetchLeave
+
+  // Redux state
+  const { data, error } = useAppSelector((state) => state.fetchLeave);
+  const { data: usersData, isLoading } = useAppSelector(
+    (state) => state.fetchUsersSmart
   );
+  const { data: roleData } = useAppSelector((state) => state.fetchroleSlice);
+
+  // Effects
+  useEffect(() => {
+    if (usersData.length === 0) {
+      dispatch(fetchUsersSmart());
+    }
+  }, [dispatch, usersData.length, router]);
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
@@ -30,52 +43,26 @@ export default function Dashboard() {
     }
   }, []);
 
-  useEffect(() => {
-    try {
-      if (data.length === 0) {
-        dispatch(fetchLeaves()).unwrap();
-      }
-    } catch (error) {
-      console.log("errrrrrrrrrrrrrrrrrrr");
-    }
-  }, []);
-
-  const getPTOLeaveDays = (leaves: Array<any>) => {
-    return leaves.filter((leave) => leave.leaveTypeId === "PTO").length;
-  };
-
-  const getSickLeaveDays = (leaves: Array<any>) => {
-    return leaves.filter((leave) => leave.leaveTypeId === "SICK").length;
-  };
-
-  const getAnnualLeaveDays = (leaves: Array<any>) => {
-    return leaves.filter((leave) => leave.leaveTypeId === "ANNUAL").length;
-  };
-
-  const getAPPROVEDLeaveDays = (leavesData: Array<any>) => {
-    if (
-      leavesData?.length > 0 &&
-      Array.isArray(leavesData[leavesData?.length - 1])
-    ) {
-      const latestLeaves = leavesData[leavesData.length - 1];
-      return (
-        latestLeaves?.filter(
-          (leave: any) =>
-            leave?.status === "APPROVED" && leave?.email !== currentUserEmail
-        ) || []
-      );
-    }
+  // Loading state - moved after all hooks
+  if (isLoading) {
     return (
-      leavesData?.filter(
-        (leave: any) =>
-          leave?.status === "APPROVED" && leave?.email !== currentUserEmail
-      ) || []
+      <div className='flex justify-center items-center h-screen'>
+        Loading...
+      </div>
     );
-  };
+  }
 
-  const approvedLeaves =
-    data?.length > 0 ? getAPPROVEDLeaveDays(data[data?.length - 1]?.data) : [];
-  const firstFiveColleagues = approvedLeaves.slice(0, 5);
+  // Debug log - moved after hooks
+
+  const activeUser = usersData[usersData?.length - 1]?.data.filter((i: any) => {
+    return i.is_active === 1;
+  });
+
+  const inactiveUser = usersData[usersData?.length - 1]?.data.filter(
+    (i: any) => {
+      return i.is_active === 0;
+    }
+  );
 
   return (
     <div className='max-w-[1000px] m-auto'>
@@ -84,31 +71,27 @@ export default function Dashboard() {
 
         {/* Leave Balance Card */}
         <div className='bg-white p-6 rounded-lg shadow'>
-          <h2 className='text-xl font-semibold mb-4'>Leave Balance</h2>
+          <h2 className='text-xl font-semibold mb-4'>User Stats</h2>
           <div className='grid grid-cols-3 gap-4'>
             <div className='text-center'>
               <p className='text-2xl font-bold'>
-                {data?.length > 0
-                  ? getAnnualLeaveDays(data[data?.length - 1].data)
+                {usersData?.length > 0
+                  ? usersData[usersData?.length - 1]?.data?.length
                   : 0}
               </p>
-              <p className='text-gray-600'>Annual Leave</p>
+              <p className='text-gray-600'>Total User</p>
             </div>
             <div className='text-center'>
               <p className='text-2xl font-bold'>
-                {data?.length > 0
-                  ? getSickLeaveDays(data[data?.length - 1].data)
-                  : 0}
+                {activeUser?.length > 0 ? activeUser?.length : 0}
               </p>
-              <p className='text-gray-600'>Sick Leave</p>
+              <p className='text-gray-600'>Active User</p>
             </div>
             <div className='text-center'>
               <p className='text-2xl font-bold'>
-                {data?.length > 0
-                  ? getPTOLeaveDays(data[data?.length - 1].data)
-                  : 0}
+                {inactiveUser?.length > 0 ? inactiveUser?.length : 0}
               </p>
-              <p className='text-gray-600'>Personal Leave</p>
+              <p className='text-gray-600'>Inactive User</p>
             </div>
           </div>
         </div>
@@ -116,16 +99,16 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <div className='grid grid-cols-2 gap-4'>
           <Link
-            href='/dashboard/apply-leave'
+            href='/dashboard/users'
             className='bg-blue-500 text-white p-4 rounded-lg text-center hover:bg-blue-600'
           >
-            Apply for Leave
+            View Users
           </Link>
           <Link
-            href='/dashboard/leave-history'
+            href='/dashboard/roles'
             className='bg-green-500 text-white p-4 rounded-lg text-center hover:bg-green-600'
           >
-            View Leave History
+            View Roles
           </Link>
         </div>
 
@@ -133,17 +116,17 @@ export default function Dashboard() {
         <div className='bg-white p-6 rounded-lg shadow'>
           <div className='flex justify-between items-center mb-4'>
             <h2 className='text-xl font-semibold'>Colleagues on Leave</h2>
-            {approvedLeaves.length > 5 && (
+            {/* {approvedLeaves.length > 5 && (
               <Link
                 href='/dashboard/colleagues-on-leave'
                 className='text-blue-500 hover:text-blue-600 text-sm font-medium'
               >
                 See All ({approvedLeaves.length})
               </Link>
-            )}
+            )} */}
           </div>
           <div className='flex flex-wrap gap-6 justify-between'>
-            {firstFiveColleagues.map((colleague: any, index: any) => (
+            {/* {firstFiveColleagues.map((colleague: any, index: any) => (
               <div
                 key={index}
                 className='text-center flex flex-col items-center'
@@ -158,12 +141,12 @@ export default function Dashboard() {
                   Until {new Date(colleague.end_date).toLocaleDateString()}
                 </p>
               </div>
-            ))}
-            {firstFiveColleagues.length === 0 && (
+            ))} */}
+            {/* {firstFiveColleagues.length === 0 && (
               <p className='text-gray-500 text-center w-full'>
                 No colleagues are currently on leave
               </p>
-            )}
+            )} */}
           </div>
         </div>
 

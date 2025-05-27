@@ -68,9 +68,14 @@ function LoginContent() {
     try {
       console.log("email", email);
       const res = await dispatch(loginThunk({ email, password }));
-      console.log("response", res.payload.data.access_token);
+
       JwtService.storeToken(res.payload.data.access_token);
-      router.push("/dashboard");
+      console.log(
+        "responseeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        res.payload.data.access_token,
+        JwtService.decodeToken(res.payload.data.access_token)
+      );
+      //  router.push("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
     }

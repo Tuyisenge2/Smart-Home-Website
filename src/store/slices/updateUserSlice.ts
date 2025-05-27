@@ -1,56 +1,66 @@
 import API from "@/utils/Api";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface userType{
-    email:string,
-    password:string,
+interface UserUpdateType {
+    id: string;
+    name?: string;
+    role_id?: number;
+    is_active?: boolean;
 }
 
-const initialState: any = {
-	isLoading: false,
-	data: [],
-	error: null,
+interface UserState {
+    isLoading: boolean;
+    data: any;
+    error: string | null;
+}
+
+const initialState: UserState = {
+    isLoading: false,
+    data: null,
+    error: null,
 };
 
 export const updateUserThunk = createAsyncThunk(
-	'login',
-	async ({ email,password }: userType, { rejectWithValue }) => {
-		try {
-			const { data } = await API.post('/auth/login', {
-				email,password
-			});
-			return data;
-		} catch (error) {
-			return rejectWithValue((error as any).response);
-		}
-	},
+    'user/update',
+    async ({ id, ...userData }: UserUpdateType, { rejectWithValue }) => {
+        try {
+            const { data } = await API.put(`/users/${id}`, userData);
+            return data;
+        } catch (error) {
+            return rejectWithValue((error as any).response?.data);
+        }
+    },
 );
 
-const loginSlice = createSlice({
-	name: 'login',
-	initialState,
-	reducers: {},
-	extraReducers: (builder) => {
-		builder.addCase(updateUserThunk.pending, (state) => {
-			state.isLoading = true;
-			state.error = null;
-		});
-		builder.addCase(
-			updateUserThunk.fulfilled,
-			(state, action: PayloadAction<any>) => {
-				state.isLoading = false;
-				state.data = [...state.data, action.payload];
-				state.error = null;
-			},
-		);
-		builder.addCase(
-			updateUserThunk.rejected,
-			(state, action: PayloadAction<any>) => {
-				state.isLoading = false;
-				state.error = action.payload?.data?.message;
-			},
-		);
-	},
+const userUpdateSlice = createSlice({
+    name: 'userUpdate',
+    initialState,
+    reducers: {
+        resetUserUpdateState: () => initialState,
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(updateUserThunk.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(
+                updateUserThunk.fulfilled,
+                (state, action: PayloadAction<any>) => {
+                    state.isLoading = false;
+                    state.data = action.payload;
+                    state.error = null;
+                },
+            )
+            .addCase(
+                updateUserThunk.rejected,
+                (state, action: PayloadAction<any>) => {
+                    state.isLoading = false;
+                    state.error = action.payload?.message || 'Failed to update user';
+                },
+            );
+    },
 });
 
-export default loginSlice.reducer;
+//export const { resetUserUpdateState } = userUpdateSlice.actions;
+export default userUpdateSlice.reducer;

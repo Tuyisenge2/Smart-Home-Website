@@ -50,7 +50,7 @@ export default function DashboardLayout({
         {/* Sidebar */}
         <aside className='fixed left-0 top-0 w-64 bg-gray-800 text-white p-4 flex flex-col h-screen'>
           <div className='flex-1 overflow-y-auto'>
-            <h2 className='text-xl font-bold mb-6'>Employee Dashboard</h2>
+            <h2 className='text-xl font-bold mb-6'>Dashboard</h2>
             <nav className='space-y-2'>
               <Link
                 href='/dashboard'
@@ -63,26 +63,6 @@ export default function DashboardLayout({
                 Overview
               </Link>
               <Link
-                href='/dashboard/apply-leave'
-                className={`block p-2 rounded ${
-                  pathname === "/dashboard/apply-leave"
-                    ? "bg-gray-700"
-                    : "hover:bg-gray-700"
-                }`}
-              >
-                Apply Leave
-              </Link>
-              <Link
-                href='/dashboard/leave-history'
-                className={`block p-2 rounded ${
-                  pathname === "/dashboard/leave-history"
-                    ? "bg-gray-700"
-                    : "hover:bg-gray-700"
-                }`}
-              >
-                Leave History
-              </Link>
-              <Link
                 href='/dashboard/users'
                 className={`block p-2 rounded ${
                   pathname === "/dashboard/leave-types"
@@ -92,40 +72,15 @@ export default function DashboardLayout({
               >
                 Users
               </Link>
-              {userAdmin() && (
-                <>
-                  <Link
-                    href='/dashboard/leave-approvals'
-                    className={`block p-2 rounded ${
-                      pathname === "/dashboard/leave-approvals"
-                        ? "bg-gray-700"
-                        : "hover:bg-gray-700"
-                    }`}
-                  >
-                    Leave Approvals
-                  </Link>
-                  <Link
-                    href='/dashboard/leave-types'
-                    className={`block p-2 rounded ${
-                      pathname === "/dashboard/leave-types"
-                        ? "bg-gray-700"
-                        : "hover:bg-gray-700"
-                    }`}
-                  >
-                    Leave Types
-                  </Link>
-                </>
-              )}
-
               <Link
-                href='/dashboard/colleagues-on-leave'
+                href='/dashboard/roles'
                 className={`block p-2 rounded ${
-                  pathname === "/dashboard/colleagues-on-leave"
+                  pathname === "/dashboard/leave-types"
                     ? "bg-gray-700"
                     : "hover:bg-gray-700"
                 }`}
               >
-                Colleagues on Leave
+                Roles
               </Link>
             </nav>
           </div>

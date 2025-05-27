@@ -9,6 +9,8 @@ import { approveLeave } from "@/store/slices/leaveApprovalSlice";
 import { sendEmail } from "@/app/lib/send-email";
 import HTML_TEMPLATE from "@/app/utils/mail-template";
 import { fetchUsersSmart } from "@/store/slices/getUserSmartSlice";
+import { fetchingRoleThunk } from "@/store/slices/roleSlice";
+import { updateUserThunk } from "@/store/slices/updateUserSlice";
 
 export default function usersTable() {
   const dispatch = useAppDispatch();
@@ -17,19 +19,28 @@ export default function usersTable() {
   const { data: usersData, isLoading } = useAppSelector(
     (state) => state.fetchUsersSmart
   );
+  const { data: roleData } = useAppSelector((state) => state.fetchroleSlice);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState("");
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   useEffect(() => {
     if (usersData.length === 0) {
       dispatch(fetchUsersSmart());
     }
   }, [dispatch, usersData.length, router]);
 
+  useEffect(() => {
+    if (roleData.length === 0) {
+      dispatch(fetchingRoleThunk());
+    }
+  }, [dispatch, roleData.length, router]);
+
   if (usersData) {
     console.log(
       "user FDDDDDDDDDDDDDAtAAAAAAAAa",
-      usersData[usersData.length - 1]?.data
+      roleData[roleData.length - 1]?.data
+      //   usersData[usersData.length - 1]?.data
     );
   }
 
@@ -55,16 +66,21 @@ export default function usersTable() {
     setIsRoleModalOpen(false);
     setSelectedUser(null);
     setSelectedRole("");
+    setSelectedRoleId(null);
   };
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedRole(e.target.value);
+    const roleId = parseInt(e.target.value);
+    setSelectedRoleId(roleId);
+    const selectedRoleName = roleData[roleData.length - 1]?.data.find(
+      (role: any) => role.id === roleId
+    )?.name;
+    setSelectedRole(selectedRoleName || "");
   };
 
   return (
     <div>
       <h1 className='text-3xl font-bold mb-8'> Smart Home Users</h1>
-
       {isRoleModalOpen && (
         <div className='fixed inset-0 bg-black/40 flex items-center justify-center z-50'>
           <div className='bg-white rounded-lg p-6 w-full max-w-md'>
@@ -78,15 +94,17 @@ export default function usersTable() {
                 Current Role: {selectedUser?.role.name}
               </label>
               <select
-                value={selectedRole}
+                value={selectedRoleId || ""}
                 onChange={handleRoleChange}
                 className='w-full p-2 border border-gray-300 rounded-md'
               >
-                {roles.map((role) => (
-                  <option key={role.id} value={role.name}>
-                    {role.name}
-                  </option>
-                ))}
+                <option value=''>Select a role</option>
+                {roleData.length > 0 &&
+                  roleData[roleData.length - 1]?.data.map((role: any) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -98,7 +116,20 @@ export default function usersTable() {
                 Cancel
               </button>
               <button
-                //  onClick={submitRoleChange}
+                onClick={async () => {
+                  if (selectedRoleId) {
+                    // Here you would dispatch your update action
+                    await dispatch(
+                      updateUserThunk({
+                        id: selectedUser.id,
+                        role_id: selectedRoleId,
+                      })
+                    );
+                    await dispatch(fetchUsersSmart());
+                    showSuccess("Role updated successfully!");
+                    closeRoleModal();
+                  }
+                }}
                 className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
               >
                 Save Changes
@@ -166,14 +197,40 @@ export default function usersTable() {
                     <td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
                       {user.is_active === 1 ? (
                         <button
-                          onClick={() => {}}
+                          onClick={async () => {
+                            try {
+                              await dispatch(
+                                updateUserThunk({
+                                  id: user.id,
+                                  is_active: false,
+                                })
+                              );
+                              await dispatch(fetchUsersSmart());
+                              showSuccess("User deactivated successfully!");
+                            } catch (error) {
+                              showError("Failed to deactivate user");
+                            }
+                          }}
                           className='px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors'
                         >
                           Deactivate
                         </button>
                       ) : (
                         <button
-                          onClick={() => {}}
+                          onClick={async () => {
+                            try {
+                              await dispatch(
+                                updateUserThunk({
+                                  id: user.id,
+                                  is_active: true,
+                                })
+                              );
+                              await dispatch(fetchUsersSmart());
+                              showSuccess("User activated successfully!");
+                            } catch (error) {
+                              showError("Failed to activate user");
+                            }
+                          }}
                           className='px-3 py-1 bg-green-50 text-green-600 rounded-md hover:bg-green-100 transition-colors'
                         >
                           Activate

@@ -10,6 +10,8 @@ import fetchUsers from "./slices/fetchUsersSlice";
 import loginReducer from "./slices/loginSlice";
 import registerReducer from "./slices/registerSlice";
 import fetchUsersSmart from "./slices/getUserSmartSlice";
+import userUpdateSlice from "./slices/updateUserSlice";
+import fetchroleSlice from "./slices/roleSlice"
 export const store = configureStore({
   reducer: {
     leaveHistory: leaveHistoryReducer,
@@ -22,7 +24,9 @@ export const store = configureStore({
     fetchUsers: fetchUsers,
     login: loginReducer,
     register: registerReducer,
-    fetchUsersSmart:fetchUsersSmart
+    fetchUsersSmart:fetchUsersSmart,
+    userUpdateSlice,
+    fetchroleSlice
   },
 });
 
