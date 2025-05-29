@@ -20,9 +20,12 @@ import { useForm } from "react-hook-form";
 import { authService } from "@/services/authService";
 import { JwtService } from "@/services/jwtService";
 import { loginThunk } from "@/store/slices/loginSlice";
+import useToast from "@/hooks/useToast";
 
 function LoginContent() {
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
+
   const dispatch = useAppDispatch();
   const { isLoading: authLoading, error: authError } = useAppSelector(
     (state) => state.login
@@ -38,31 +41,6 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // useEffect(() => {
-  //   if (token) {
-  //     if (JwtService.isTokenValid(token)) {
-  //       const userData = JwtService.getTokenData(token);
-  //       if (userData) {
-  //         try {
-  //           dispatch(googleSignInSuccess(userData));
-  //           router.push("/dashboard");
-  //         } catch (error) {}
-  //       } else {
-  //         router.push("/login");
-  //       }
-  //     } else {
-  //       router.push("/login");
-  //     }
-  //   }
-  // }, [dispatch, router, token]);
-
-  // const handleGoogleSignIn = async () => {
-  //   try {
-  //     dispatch(googleSignInStart());
-  //     authService.googleSignIn();
-  //   } catch (error) {}
-  // };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -72,10 +50,19 @@ function LoginContent() {
       JwtService.storeToken(res.payload.data.access_token);
       console.log(
         "responseeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        res.payload.data.access_token,
+        res.payload.data.user,
         JwtService.decodeToken(res.payload.data.access_token)
       );
-      //  router.push("/dashboard");
+      if (
+        res.payload.data.user.role == "ADMIN" &&
+        res.payload.data.user.is_active == 1
+      ) {
+        showSuccess("Login successfully!");
+        router.push("/dashboard");
+      } else {
+        showError("You are not allowed to Login,contact support!");
+        router.push("/login");
+      }
     } catch (error) {
       console.error("Login error:", error);
     }
@@ -98,6 +85,9 @@ function LoginContent() {
                 onChange={(value) => {
                   setEmail(value.target.value);
                 }}
+                required
+                pattern='[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+                title='Please enter a valid email address (e.g., user@example.com)'
               />
             </div>
 
@@ -109,6 +99,9 @@ function LoginContent() {
                 onChange={(value) => {
                   setPassword(value.target.value);
                 }}
+                required
+                minLength={4}
+                title='Password must be at least 6 characters long'
               />
             </div>
 
